@@ -1,0 +1,29 @@
+Edwin's Shell Explained Start to Finish:
+
+Checking for "-n":
+
+    The program searches the argv array from main to determine whether or not to call prompt();
+
+Reading input:
+
+    The program begins with the prompt "$my_shell:" given by the function prompt() with a printf() function call. Then input_read() will await for the user's prompt with the function call fgets that puts the input from stdin to a char* input. There is an if statement to check if CTRL-D is pressed. If CTRL-D is pressed the char* input will be NULL.
+
+Parsing input: 
+
+    Next the input will be used to construct the commands list which is an array of structs which contains each commands arg[] and flags whether or not if it has a pipe, redireciton, background, or no operators. The contruct command() will take the user input and reads until it reaches to one of the operators. (all the arrays such as the struct arrays and  It will parse with the parse() to separate the string into the different arguments. Next it will be deepcopied into the struct list and have the descriptors set to determine what kind of command it is. After information has been copied into a struct, it will proceed to read the next command to be put into the next struct in the list. It stops until it reaches the end of the user input.
+    There is an error checking portion to see if '>' is applied to the last command or '<' is only applied to the first command. It also checks for segmentation faults using a signal handler. 
+
+Launch commands (and all the executing functions it calls): 
+
+    Launch_prog() is called once the struct list has been made. It will go through the struct list and it will check each struct's descriptor to see if it is a pipe, redirection, background, or a basic command. 
+    The basic command exec_comm() does the most basic operations in which it forks the commands. Depending on pid, if it's a parent, it will wait, and, if it's a child, it will execute the command. There is builtin function called custom)comm() to deal with commands like exit or ls.
+    The pipe_connect() connects the pipes between each comand. First a pipe must be made, whose left and right end will be inputed to the pipe_connect(). Inside pipe_connect(), inside the child process, it duplicates the read pipe end with stdin and duplicate the right ipe end with stdout so that the pipe's fd are linked to stdin and stdout. Once the duplication is done, we close those ends. We make sure close fd[1] to close the write end and carry fd[0] in the global variable "in" so that the next command can use the file descriptor and read the previous command's output.
+    The redirect_in and redirect_out does very similar to the pipes, but this time we are getting the file descriptors from opening files. Redirect_in are reading the files while Redirect_out are opening it to write into it. Similar operations are being made that fd[0] is preserved in variable "in" so that the next comand can read from the redirection command's output.
+    Finally, the launch_back() takes care of background processes. It has similar structure as the exec_comm. But this time, the parent does not wait. It will call a signal handler if it receives SIGCHLD signal. This will allow the background process to run while the signal handler will wait on the background process in order to collect its status. (it uses waitpid(-1, &status, wnohang to ensure all child processes has ended) It needs to collect the status in order to prevent it from becoming a zombie. 
+
+Misc/Ened:
+    It empties the argument arrays of each structs by filling them with zeros and empties the input user array with 0's as well.
+
+Reflection:
+    I was able to perform all operations: redirection, pipelines, and background. However, I have not exetensively tested it with all commands. I have applied error checkign to all functions but there may be a posisbly that I might have missed an error.Finally, I have largely tested my code on my linux machine because usage of text editor before then copying over to egele's server. 
+    
